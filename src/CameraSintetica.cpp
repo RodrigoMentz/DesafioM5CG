@@ -78,7 +78,7 @@ uniform sampler2D texBuff;
 uniform vec3 lightPos;
 uniform vec3 camPos;
 uniform float ka;
-uniform float kd;
+uniform float ke;
 uniform float ks;
 uniform float q;
 out vec4 color;
@@ -99,7 +99,7 @@ void main()
 	vec3 N = normalize(vNormal);
 	vec3 L = normalize(lightPos - vec3(fragPos));
 	float diff = max(dot(N, L),0.0);
-	vec3 diffuse = kd * diff * lightColor;
+	vec3 diffuse = ke * diff * lightColor;
 
 	//Coeficiente de reflexão especular
 	vec3 R = normalize(reflect(-L,N));
@@ -122,8 +122,8 @@ struct Object
 
 struct Material {
     glm::vec3 ka;
-    glm::vec3 kd;
     glm::vec3 ks;
+    glm::vec3 ke;
     std::string textureFile;
 };
 
@@ -179,9 +179,9 @@ int main()
 
 	Object obj;
     
-	obj.VAO = loadSimpleOBJ("../assets/Modelos3D/SuzanneSubdiv1.obj", obj.nVertices);
+	obj.VAO = loadSimpleOBJ("../assets/Modelos3D/Skeletal_Stego.obj", obj.nVertices);
 
-    Material mat = materiais["Material.001"];
+    Material mat = materiais["MM_Dino"];
     cout << "Conferir material.textureFile: " << mat.textureFile << endl;
 	// Carregando uma textura e armazenando seu id
 	int imgWidth, imgHeight;
@@ -205,7 +205,7 @@ int main()
 	glUniform1i(glGetUniformLocation(shaderID, "texBuff"), 0);
     
     glUniform1f(glGetUniformLocation(shaderID, "ka"), mat.ka.r);
-	glUniform1f(glGetUniformLocation(shaderID, "kd"), mat.kd.r);
+	glUniform1f(glGetUniformLocation(shaderID, "ke"), mat.ke.r);
 	glUniform1f(glGetUniformLocation(shaderID, "ks"), mat.ks.r);
 	glUniform1f(glGetUniformLocation(shaderID, "q"), q);
 	glUniform3f(glGetUniformLocation(shaderID, "lightPos"), lightPos.x,lightPos.y,lightPos.z);
@@ -220,6 +220,21 @@ int main()
     // cada iteração
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
+
+    cameraPos.x = -50.8586;
+    cameraPos.y = 19.1345;
+    cameraPos.z = 30.2106;
+
+    cameraFront.x = 0.823627;
+    cameraFront.y = -0.12793;
+    cameraFront.z = -0.567121;
+
+    cameraUp.x = 0.10637;
+    cameraUp.y = 0.998971;
+    cameraUp.z = -0.0710744;
+    rotacaoYaw = -37.45;
+    rotaocaoPitch = -0.85;
+
 	//Ativando o primeiro buffer de textura da OpenGL
 	glActiveTexture(GL_TEXTURE0);
 	
@@ -229,7 +244,6 @@ int main()
 	// Loop da aplicação - "game loop"
 	while (!glfwWindowShouldClose(window))
 	{
-        
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
@@ -252,7 +266,6 @@ int main()
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         projection = glm::perspective(fov, (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-        cout << "fov: " << fov << endl;
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniform3f(glGetUniformLocation(shaderID, "camPos"), cameraPos.x, cameraPos.y, cameraPos.z);
@@ -284,6 +297,21 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+
+        if (key == GLFW_KEY_C && action == GLFW_PRESS)
+        {
+            cout << "camera x: " << cameraPos.x << endl;
+            cout << "camera y: " << cameraPos.y << endl;
+            cout << "camera z: " << cameraPos.z << endl;
+            cout << "camerafront x: " << cameraFront.x << endl;
+            cout << "camerafront y: " << cameraFront.y << endl;
+            cout << "camerafront z: " << cameraFront.z << endl;
+            cout << "cameraUp x: " << cameraUp.x << endl;
+            cout << "cameraUp y: " << cameraUp.y << endl;
+            cout << "cameraUp z: " << cameraUp.z << endl;
+            cout << "rotacaoYaw: " << rotacaoYaw << endl;
+            cout << "rotaocaoPitch: " << rotaocaoPitch << endl;
+        }
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos)
@@ -563,12 +591,12 @@ int loadSimpleOBJ(string filePATH, int &nVertices)
                     ssmtl >> materiais[nomeMaterial].ka.r >> materiais[nomeMaterial].ka.g >> materiais[nomeMaterial].ka.b;
                 }
 
-                if (mtlWord == "Kd") {
-                    ssmtl >> materiais[nomeMaterial].kd.r >> materiais[nomeMaterial].kd.g >> materiais[nomeMaterial].kd.b;
-                }
-
                 if (mtlWord == "Ks") {
                     ssmtl >> materiais[nomeMaterial].ks.r >> materiais[nomeMaterial].ks.g >> materiais[nomeMaterial].ks.b;
+                }
+
+                if (mtlWord == "Ke") {
+                    ssmtl >> materiais[nomeMaterial].ke.r >> materiais[nomeMaterial].ke.g >> materiais[nomeMaterial].ke.b;
                 }
 
                 if (mtlWord == "map_Kd") {
